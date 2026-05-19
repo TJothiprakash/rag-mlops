@@ -1,0 +1,53 @@
+name: RAG MLOps CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: ML Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CPU-only torch first
+        run: pip install torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run ML tests
+        run: pytest tests/ -v
+
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t rag-mlops .
+
+      - name: Run performance gate inside Docker
+        run: |
+          docker run rag-mlops pytest tests/test_pipeline.py::test_similarity_above_threshold -v
+
+      - name: Smoke test — health endpoint
+        run: |
+          docker run -d -p 8000:8000 --name rag-container rag-mlops
+          sleep 15
+          curl -f http://localhost:8000/health
+          docker stop rag-container
