@@ -1,0 +1,38 @@
+name: Nightly Drift Check
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # runs every night at midnight UTC
+  workflow_dispatch:       # allows manual trigger from GitHub UI
+
+jobs:
+  drift-check:
+    name: Evidently Drift Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CPU-only torch
+        run: pip install torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install dependencies
+        run: |
+          pip install evidently==0.4.30
+          pip install sentence-transformers faiss-cpu numpy pandas
+
+      - name: Run drift check
+        run: python drift/drift_check.py
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drift-report
+          path: drift_report.html
