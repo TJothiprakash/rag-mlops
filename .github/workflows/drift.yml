@@ -30,7 +30,7 @@ jobs:
           pip install evidently==0.4.30
           pip install pandas
 
-     - name: Run drift check
+      - name: Run drift check
         run: python drift/drift_check.py || true
         
       - name: Upload drift report
