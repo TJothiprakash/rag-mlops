@@ -24,8 +24,11 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install numpy==1.26.4
+          pip install sentence-transformers==2.7.0
+          pip install faiss-cpu==1.7.4
           pip install evidently==0.4.30
-          pip install sentence-transformers faiss-cpu numpy pandas
+          pip install pandas
 
       - name: Run drift check
         run: python drift/drift_check.py
